@@ -9,6 +9,16 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id        Int     @id @default(autoincrement()) // 기본 키 (자동 증가)
+  email     String  @unique                      // 유니크한 이메일
+  password  String                              // 비밀번호 (해시 저장)
+  name      String?                              // 선택적 사용자 이름
+  createdAt DateTime @default(now())             // 생성 날짜
+  updatedAt DateTime @updatedAt                  // 업데이트 날짜
 }
