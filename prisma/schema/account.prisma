@@ -1,12 +1,19 @@
 model Account {
-  id          String   @id @default(uuid()) // UUID로 기본값 설정
-  userId      String   // User 테이블과 연결되는 외래 키
-  provider    String   // 로그인 제공자
-  providerId  String   // 제공자 ID
-  password    String?  // 로컬 계정일 경우 필요
-  createdAt   DateTime @default(now()) // 계정 생성일시, 자동 설정
+  id          String   @id @default(cuid()) 
+  userId      String   
+  provider    Provider @default(LOCAL)   
+  providerId  String   
+  password    String?  
+  createdAt   DateTime @default(now()) 
+  updatedAt   DateTime @updatedAt 
 
-  user        User     @relation(fields: [userId], references: [id]) // User와의 관계
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshToken RefreshToken? 
+}
 
-  @@index([provider, providerId]) // 유니크한 제약을 위한 인덱스 (로그인 제공자 + 제공자 ID)
+enum Provider {
+  GOOGLE
+  KAKAO
+  LOCAL
+  NAVER
 }
