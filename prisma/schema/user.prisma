@@ -1,0 +1,7 @@
+model User {
+  id          String   @id @default(uuid()) // UUID로 기본값 설정
+  name        String?  // NULL 허용
+  email       String?  @unique // NULL 허용, 유니크 제약
+  profileImg  String?  // 프로필 이미지 URL
+  accounts    Account[] // User와 연결된 Account들
+}
