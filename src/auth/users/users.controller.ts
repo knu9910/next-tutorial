@@ -23,7 +23,7 @@ export class UsersController {
 
   @Get(':id')
   findOne(@Param('id') id: string): Observable<User | null> {
-    return this.userService.findOne(Number(id));
+    return this.userService.findOne(id);
   }
 
   @Post()
@@ -33,11 +33,11 @@ export class UsersController {
 
   @Put(':id')
   update(@Param('id') id: string, @Body() dto: UserDto): Observable<User> {
-    return this.userService.update(Number(id), dto);
+    return this.userService.update(id, dto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string): Observable<User> {
-    return this.userService.remove(Number(id));
+    return this.userService.remove(id);
   }
 }

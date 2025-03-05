@@ -12,7 +12,7 @@ export class UsersService {
     return this.userRepository.findAll();
   }
 
-  findOne(id: number): Observable<User | null> {
+  findOne(id: string): Observable<User | null> {
     return this.userRepository.findOne(id);
   }
 
@@ -20,11 +20,11 @@ export class UsersService {
     return this.userRepository.create(dto);
   }
 
-  update(id: number, dto: UserDto): Observable<User> {
+  update(id: string, dto: UserDto): Observable<User> {
     return this.userRepository.update(id, dto);
   }
 
-  remove(id: number): Observable<User> {
+  remove(id: string): Observable<User> {
     return this.userRepository.remove(id);
   }
 }
