@@ -1,14 +1,14 @@
 model Account {
-  id          String   @id @default(cuid()) 
+  id          String       @id @default(cuid())
   userId      String   
-  provider    Provider @default(LOCAL)   
+  provider    Provider     @default(LOCAL)
   providerId  String   
   password    String?  
-  createdAt   DateTime @default(now()) 
-  updatedAt   DateTime @default(now()) @updatedAt 
+  createdAt   DateTime     @default(now()) 
+  updatedAt   DateTime     @default(now()) @updatedAt
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  refreshToken RefreshToken? 
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionLogs SessionLog[] // 여러 SessionLog를 참조
 }
 
 enum Provider {

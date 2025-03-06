@@ -35,7 +35,7 @@ export class UsersService {
   findOne(id: string): Observable<User | null> {
     return from(this.prisma.user.findUnique({ where: { id } }));
   }
-
+  // email이 이미 존재하는지 확인
   findUnique(email: string): Observable<User | null> {
     return from(this.prisma.user.findUnique({ where: { email } })).pipe(
       mergeMap((existingUser) => {
@@ -48,10 +48,45 @@ export class UsersService {
       }),
     );
   }
-
+  // 해시 비밀번호 생성
   hashPassword(password: string): Observable<string> {
     return from(bcrypt.hash(password, 10));
   }
+
+  // 비밀번호 검증
+  verifyUserCredentials(email: string, password: string): Observable<boolean> {
+    return from(
+      this.prisma.user.findUnique({
+        where: { email },
+        include: { accounts: true }, // 계정 정보 포함
+      }),
+    ).pipe(
+      mergeMap((user) => {
+        // 사용자 또는 계정이 없으면 예외를 던짐
+        if (!user || !user.accounts || user.accounts.length === 0) {
+          throw new UnprocessableEntityException('사용자를 찾을 수 없습니다.');
+        }
+
+        const storedPassword = user.accounts[0].password; // 첫 번째 계정의 비밀번호 가져오기
+
+        // storedPassword가 null인 경우 예외를 던짐
+        if (!storedPassword) {
+          throw new UnauthorizedException('저장된 비밀번호가 없습니다.');
+        }
+
+        // 비밀번호 비교
+        return from(bcrypt.compare(password, storedPassword)).pipe(
+          mergeMap((isValid) => {
+            if (!isValid) {
+              throw new UnauthorizedException('잘못된 비밀번호입니다.');
+            }
+            return from([true]); // 비밀번호가 맞으면 true 반환
+          }),
+        );
+      }),
+    );
+  }
+
   // 회원가입 (유저 + 계정 생성)
   create(email: string, password: string): Observable<CreateUserResponseDto> {
     return this.findUnique(email).pipe(
@@ -82,9 +117,30 @@ export class UsersService {
   }
 
   // 로그인 (이메일과 비밀번호 인증 후 accessToken 및 refreshToken 발급)
-  // signIn(email: string, password: string | null) : Observable<{ access_token: string; refresh_token: string }> {
+  signIn(
+    email: string,
+    password: string,
+  ): Observable<{ access_token: string; refresh_token: string }> {
+    return this.verifyUserCredentials(email, password).pipe(
+      mergeMap(() => {
+        // 이메일과 비밀번호가 유효하면 JWT 토큰 생성
+        const payload = { email }; // payload에 이메일 추가
+        const access_token: string = this.jwtService.sign(payload, {
+          expiresIn: '15m', // 15분짜리 accessToken
+        });
+        const refresh_token: string = this.jwtService.sign(payload, {
+          expiresIn: '7d', // 7일짜리 refreshToken
+        });
 
-  // }
+        return from([
+          {
+            access_token,
+            refresh_token,
+          },
+        ]);
+      }),
+    );
+  }
 
   // 유저 정보 업데이트
   update(id: string, dto: UserDto): Observable<User> {
