@@ -20,3 +20,14 @@ export class UserDto {
   @IsOptional()
   name?: string;
 }
+
+export class LoginDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @IsString()
+  @MinLength(4)
+  @IsNotEmpty()
+  password: string;
+}

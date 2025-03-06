@@ -5,19 +5,22 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service'; // Prisma 직접 사용
 import * as bcrypt from 'bcryptjs';
-import { UserDto } from '../dto/user.dto';
+import { LoginDto, UserDto } from '../dto/user.dto';
 import { Provider, User } from '@prisma/client';
-import { from, mergeMap, Observable } from 'rxjs';
+import { from, map, mergeMap, Observable, tap } from 'rxjs';
 import { JwtService } from '@nestjs/jwt'; // JWT 서비스 추가
 import { CreateUserResponseDto } from '../../response/response.dto';
 import { ResponseService } from 'src/response/response.service';
-
+import { SessionLogService } from '../session-log/session-log.service';
+import { getBrowserInfo, getIpAddress } from 'src/utils/requset.utils';
+import { Request } from 'express';
 @Injectable()
 export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly responseService: ResponseService,
     private readonly jwtService: JwtService, // JWT 서비스 의존성 추가
+    private readonly sessionLogService: SessionLogService,
   ) {}
 
   // 모든 유저 조회
@@ -56,11 +59,15 @@ export class UsersService {
   }
 
   // 비밀번호 검증
-  verifyUserCredentials$(email: string, password: string): Observable<boolean> {
+  verifyUserCredentials$(email: string, password: string): Observable<string> {
     return from(
       this.prisma.user.findUnique({
         where: { email },
-        include: { accounts: true }, // 계정 정보 포함
+        include: {
+          accounts: {
+            where: { provider: 'LOCAL' }, // ✅ LOCAL 계정만 조회
+          },
+        },
       }),
     ).pipe(
       mergeMap((user) => {
@@ -78,11 +85,11 @@ export class UsersService {
 
         // 비밀번호 비교
         return from(bcrypt.compare(password, storedPassword)).pipe(
-          mergeMap((isValid) => {
+          map((isValid) => {
             if (!isValid) {
               throw new UnauthorizedException('잘못된 비밀번호입니다.');
             }
-            return from([true]); // 비밀번호가 맞으면 true 반환
+            return user.accounts[0].id; // 비밀번호가 맞으면 true 반환
           }),
         );
       }),
@@ -119,27 +126,44 @@ export class UsersService {
   }
 
   // 로그인 (이메일과 비밀번호 인증 후 accessToken 및 refreshToken 발급)
-  signIn$(
-    email: string,
-    password: string,
+  localSignIn$(
+    dto: LoginDto,
+    req: Request,
   ): Observable<{ access_token: string; refresh_token: string }> {
-    return this.verifyUserCredentials$(email, password).pipe(
-      mergeMap(() => {
-        // 이메일과 비밀번호가 유효하면 JWT 토큰 생성
-        const payload = { email }; // payload에 이메일 추가
-        const access_token: string = this.jwtService.sign(payload, {
-          expiresIn: '15m', // 15분짜리 accessToken
+    return this.verifyUserCredentials$(dto.email, dto.password).pipe(
+      tap((asd) => console.log(asd)),
+      mergeMap((accountId) => {
+        // JWT 토큰 생성
+        const payload = { email: dto.email };
+        const access_token = this.jwtService.sign(payload, {
+          expiresIn: '15m',
         });
-        const refresh_token: string = this.jwtService.sign(payload, {
-          expiresIn: '7d', // 7일짜리 refreshToken
+        const refresh_token = this.jwtService.sign(payload, {
+          expiresIn: '7d',
         });
 
-        return from([
-          {
-            access_token,
+        // IP 및 브라우저 정보 추출
+        const ipAddress = getIpAddress(req) || 'Unknown';
+        const browserInfo = getBrowserInfo(req) || 'Unknown';
+
+        // 세션 로그 저장 후 토큰 반환
+        return from(
+          this.sessionLogService.createSessionLog(
+            accountId,
             refresh_token,
-          },
-        ]);
+            ipAddress,
+            browserInfo,
+          ),
+        ).pipe(
+          mergeMap(() =>
+            from([
+              {
+                access_token,
+                refresh_token,
+              },
+            ]),
+          ),
+        );
       }),
     );
   }

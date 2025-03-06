@@ -6,12 +6,14 @@ import {
   Put,
   Delete,
   Param,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { Observable } from 'rxjs';
 import { User } from '@prisma/client';
-import { UserDto } from '../dto/user.dto';
+import { LoginDto, UserDto } from '../dto/user.dto';
 import { CreateUserResponseDto } from 'src/response/response.dto';
+import { Request } from 'express';
 
 @Controller('users')
 export class UsersController {
@@ -30,6 +32,14 @@ export class UsersController {
   @Post()
   create$(@Body() dto: UserDto): Observable<CreateUserResponseDto> {
     return this.userService.create$(dto.email, dto.password);
+  }
+
+  @Post('/signIn')
+  localSignIn(
+    @Body() dto: LoginDto,
+    @Req() req: Request,
+  ): Observable<{ access_token: string; refresh_token: string }> {
+    return this.userService.localSignIn$(dto, req);
   }
 
   @Put(':id')
