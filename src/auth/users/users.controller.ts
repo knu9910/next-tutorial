@@ -18,27 +18,27 @@ export class UsersController {
   constructor(private readonly userService: UsersService) {}
 
   @Get()
-  findAll(): Observable<User[]> {
-    return this.userService.findAll();
+  findAll$(): Observable<User[]> {
+    return this.userService.findAll$();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Observable<User | null> {
-    return this.userService.findOne(id);
+  findOne$(@Param('id') id: string): Observable<User | null> {
+    return this.userService.findOne$(id);
   }
 
   @Post()
-  create(@Body() dto: UserDto): Observable<CreateUserResponseDto> {
-    return this.userService.create(dto.email, dto.password);
+  create$(@Body() dto: UserDto): Observable<CreateUserResponseDto> {
+    return this.userService.create$(dto.email, dto.password);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UserDto): Observable<User> {
-    return this.userService.update(id, dto);
+  update$(@Param('id') id: string, @Body() dto: UserDto): Observable<User> {
+    return this.userService.update$(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string): Observable<User> {
-    return this.userService.remove(id);
+  remove$(@Param('id') id: string): Observable<User> {
+    return this.userService.remove$(id);
   }
 }

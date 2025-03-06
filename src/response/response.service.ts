@@ -4,7 +4,7 @@ import { CreateUserResponseDto } from './response.dto';
 
 @Injectable()
 export class ResponseService {
-  createUserResponse(
+  createUserResponse$(
     message: string,
     userId: string,
     statusCode: number,

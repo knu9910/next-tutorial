@@ -21,7 +21,7 @@ export class UsersService {
   ) {}
 
   // 모든 유저 조회
-  findAll(): Observable<User[]> {
+  findAll$(): Observable<User[]> {
     return from(
       this.prisma.user.findMany({
         include: {
@@ -32,11 +32,12 @@ export class UsersService {
   }
 
   // 특정 유저 조회
-  findOne(id: string): Observable<User | null> {
+  findOne$(id: string): Observable<User | null> {
     return from(this.prisma.user.findUnique({ where: { id } }));
   }
+
   // email이 이미 존재하는지 확인
-  findUnique(email: string): Observable<User | null> {
+  findUnique$(email: string): Observable<User | null> {
     return from(this.prisma.user.findUnique({ where: { email } })).pipe(
       mergeMap((existingUser) => {
         if (existingUser) {
@@ -48,13 +49,14 @@ export class UsersService {
       }),
     );
   }
+
   // 해시 비밀번호 생성
-  hashPassword(password: string): Observable<string> {
+  hashPassword$(password: string): Observable<string> {
     return from(bcrypt.hash(password, 10));
   }
 
   // 비밀번호 검증
-  verifyUserCredentials(email: string, password: string): Observable<boolean> {
+  verifyUserCredentials$(email: string, password: string): Observable<boolean> {
     return from(
       this.prisma.user.findUnique({
         where: { email },
@@ -88,9 +90,9 @@ export class UsersService {
   }
 
   // 회원가입 (유저 + 계정 생성)
-  create(email: string, password: string): Observable<CreateUserResponseDto> {
-    return this.findUnique(email).pipe(
-      mergeMap(() => this.hashPassword(password)),
+  create$(email: string, password: string): Observable<CreateUserResponseDto> {
+    return this.findUnique$(email).pipe(
+      mergeMap(() => this.hashPassword$(password)),
       mergeMap((hashPass) =>
         this.prisma.user.create({
           data: {
@@ -107,7 +109,7 @@ export class UsersService {
       ),
       mergeMap((user) =>
         // 사용자 생성 후 responseService로 응답 객체 생성
-        this.responseService.createUserResponse(
+        this.responseService.createUserResponse$(
           '생성이 완료되었습니다.',
           user.id,
           201,
@@ -117,11 +119,11 @@ export class UsersService {
   }
 
   // 로그인 (이메일과 비밀번호 인증 후 accessToken 및 refreshToken 발급)
-  signIn(
+  signIn$(
     email: string,
     password: string,
   ): Observable<{ access_token: string; refresh_token: string }> {
-    return this.verifyUserCredentials(email, password).pipe(
+    return this.verifyUserCredentials$(email, password).pipe(
       mergeMap(() => {
         // 이메일과 비밀번호가 유효하면 JWT 토큰 생성
         const payload = { email }; // payload에 이메일 추가
@@ -143,7 +145,7 @@ export class UsersService {
   }
 
   // 유저 정보 업데이트
-  update(id: string, dto: UserDto): Observable<User> {
+  update$(id: string, dto: UserDto): Observable<User> {
     return from(
       this.prisma.user.update({
         where: { id },
@@ -156,7 +158,7 @@ export class UsersService {
   }
 
   // 유저 삭제
-  remove(id: string): Observable<User> {
+  remove$(id: string): Observable<User> {
     return from(this.prisma.user.delete({ where: { id } }));
   }
 }
