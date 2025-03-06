@@ -10,7 +10,8 @@ import {
 import { UsersService } from './users.service';
 import { Observable } from 'rxjs';
 import { User } from '@prisma/client';
-import { UserDto } from './dto/user.dto';
+import { UserDto } from '../dto/user.dto';
+import { CreateUserResponseDto } from 'src/response/response.dto';
 
 @Controller('users')
 export class UsersController {
@@ -27,8 +28,8 @@ export class UsersController {
   }
 
   @Post()
-  create(@Body() dto: UserDto): Observable<User> {
-    return this.userService.create(dto);
+  create(@Body() dto: UserDto): Observable<CreateUserResponseDto> {
+    return this.userService.create(dto.email, dto.password);
   }
 
   @Put(':id')
