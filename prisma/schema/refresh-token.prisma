@@ -3,7 +3,7 @@ model RefreshToken {
   accountId  String   @unique 
   token      String   @unique 
   createdAt  DateTime @default(now()) 
-  updatedAt  DateTime @updatedAt 
+  updatedAt  DateTime @default(now()) @updatedAt 
   expiresAt  DateTime
 
   account    Account  @relation(fields: [accountId], references: [id], onDelete: Cascade) 
